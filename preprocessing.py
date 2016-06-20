@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
     Implementation of the preprocessing for the horse racing data.
 
@@ -22,7 +23,9 @@ concat_set = pd.concat([training_set, testing_set])
 classes = concat_set['behindn']
 
 # It seems that those params are not necessary
-concat_set = concat_set.drop(['behindn', 'rank', 'blinkerclasses', 'raceref_id'], 1)
+concat_set = concat_set.drop(
+    ['behindn', 'rank', 'blinkerclasses', 'raceref_id'], 1
+)
 
 # The year will be always different between training and testing set, then
 # I have decided to get rid of it. However the performance of the horse
@@ -51,3 +54,5 @@ np.savetxt('data/train.labels.csv', classes[:x], delimiter=',')
 
 np.savetxt('data/test.csv', scaled_features[x:], delimiter=',')
 np.savetxt('data/test.labels.csv', classes[x:], delimiter=',')
+
+print "Preprocessing completed (data/train.* data/test.* files created)"
