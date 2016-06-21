@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import deeplearn.datasets as dt
 from deeplearn.classifiers import LogisticRegression
+import deeplearn.metrics as mt
 import theano.tensor as T
 import numpy as np
 
@@ -40,6 +41,9 @@ def main():
     for batch_no in range(no_test_batches):
         test_cost.append(test_fn(batch_no))
     print "Test set cost = %f" % (np.mean(test_cost))
+    given_y = classifier.get_predict_fn()(test_x.get_value())
+    expected_y = test_y.eval()
+    print mt.confusion_matrix(given_y, expected_y, list(set(expected_y)))
 
 if __name__ == "__main__":
     main()

@@ -67,6 +67,13 @@ class LogisticRegression(object):
         )
         return valid_fn
 
+    def get_predict_fn(self):
+        predict_fn = theano.function(
+            inputs=[self.theano_input],
+            outputs=self.y_pred
+        )
+        return predict_fn
+
 class HiddenLayer(object):
     def __init__(
             self,
