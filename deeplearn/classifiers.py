@@ -130,7 +130,7 @@ class DenoisingAutoencoder(object):
             weights = np.asarray(
                 weights_initializer.uniform(
                     low=-4 * np.sqrt(6. / (no_visible + no_hidden)),
-                    high=-4 * np.sqrt(6. / (no_visible + no_hidden)),
+                    high=4 * np.sqrt(6. / (no_visible + no_hidden)),
                     size=(no_visible, no_hidden)
                 ),
                 dtype=theano.config.floatX

@@ -20,14 +20,14 @@ def main():
     dA = DenoisingAutoencoder(
             weights_initializer,
             RandomStreams(weights_initializer.randint(2 ** 30)),
-            4, 1000, 0.3, x
+            4, 500, 0.3, x
     )
 
-    epochs = 50
-    batch_size = 10
+    epochs = 15
+    batch_size = 20
     no_train_batches = train_x.get_value(borrow=True).shape[0] // batch_size
 
-    train_fn = dA.get_train_fn(index, batch_size, 0.04, train_x)
+    train_fn = dA.get_train_fn(index, batch_size, 0.1, train_x)
 
     for epoch in range(epochs):
         train_costs = []
