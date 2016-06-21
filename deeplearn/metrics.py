@@ -20,13 +20,13 @@ def confusion_matrix(true_y, pred_y, labels):
     for l in labels:
         new_row.append(len([t for t in pred_y if t == l]))
     new_row.append(len(true_y))
-    new_row.append(metrics.recall_score(true_y, pred_y))
+    new_row.append(metrics.recall_score(true_y, pred_y, average='macro'))
     confusion_table.append(new_row)
 
     new_row = ["PRECISION"]
     new_row.extend(metrics.precision_score(true_y, pred_y, average=None))
-    new_row.append(metrics.precision_score(true_y, pred_y))
-    new_row.append(metrics.f1_score(true_y, pred_y))
+    new_row.append(metrics.precision_score(true_y, pred_y, average='macro'))
+    new_row.append(metrics.f1_score(true_y, pred_y, average='macro'))
     confusion_table.append(new_row)
 
     confusion_table = pd.DataFrame(confusion_table)

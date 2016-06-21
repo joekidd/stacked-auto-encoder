@@ -18,7 +18,7 @@ def main():
 
     classifier = LogisticRegression(x, y, 4, 3)
 
-    epochs = 50
+    epochs = 100
     batch_size = 10
     no_train_batches = train_x.get_value(borrow=True).shape[0] // batch_size
     no_cv_batches = valid_x.get_value(borrow=True).shape[0] // batch_size
@@ -43,6 +43,7 @@ def main():
     print "Test set cost = %f" % (np.mean(test_cost))
     given_y = classifier.get_predict_fn()(test_x.get_value())
     expected_y = test_y.eval()
+    print "\n=======> Confusion matrix:"
     print mt.confusion_matrix(given_y, expected_y, list(set(expected_y)))
 
 if __name__ == "__main__":
