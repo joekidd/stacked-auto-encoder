@@ -2,6 +2,7 @@ import theano
 import theano.tensor as T
 from theano.tensor.shared_randomstreams import RandomStreams
 import numpy as np
+from theano.compile.debugmode import DebugMode
 
 class LogisticRegression(object):
     def __init__(self, theano_input, theano_output, no_in, no_out):
@@ -79,7 +80,6 @@ class HiddenLayer(object):
             self,
             random_state,
             theano_input,
-            theano_output,
             no_in,
             no_out,
             weights=None,
@@ -87,31 +87,27 @@ class HiddenLayer(object):
             activation=None
     ):
         self.theano_input = theano_input
-        self.theano_output = theano_output
-        
         if weights is None:
-            weights = np.asarray(
+            tmp = np.asarray(
                 random_state.uniform(
-                    low=-np.sqrt(6. / (n_in + n_out)),
-                    high=numpy.sqrt(6. / (n_in + n_out)),
-                    size=(n_in, n_out)
+                    low=-np.sqrt(6. / (no_in + no_out)),
+                    high=np.sqrt(6. / (no_in + no_out)),
+                    size=(no_in, no_out)
                 ),
                 dtype=theano.config.floatX
             )
-            weights = theano.shared(
-                value=weights, name='weights', borrow=True)
+            weights = theano.shared(value=tmp, borrow=True)
 
         if biases is None:
-            biases = numpy.zeros((n_out,), dtype=theano.config.floatX)
-            biases = theano.shared(value=biases, name='biases', borrow='True')
+            biases = np.zeros((no_out,), dtype=theano.config.floatX)
+            biases = theano.shared(value=biases, borrow='True')
         
         self.weights = weights
         self.biases = biases
         
-        if activation is None:
-            activation = T.tanh
         self.output = activation(
-            T.dot(self.theano_input, self.weights) + self.biases)
+            T.dot(self.theano_input, self.weights) + self.biases
+        )
         self.params = [self.weights, self.biases]
 
 class DenoisingAutoencoder(object):
@@ -187,8 +183,11 @@ class DenoisingAutoencoder(object):
             )
         )
 
-    def get_train_fn(self, index, batch_size, learning_rate, train_set):
-        grad_params = T.grad(self.cost(), self.params)
+    def get_train_fn(self, index, batch_size, learning_rate, train_set, in_var=None):
+        if in_var is None:
+            in_var = self.theano_input
+        cost = self.cost()
+        grad_params = T.grad(cost, self.params)
         updates = [
             (param, param - learning_rate * gparam)
             for param, gparam in zip(self.params, grad_params)
@@ -196,10 +195,75 @@ class DenoisingAutoencoder(object):
 
         train_fn = theano.function(
             inputs=[index],
-            outputs=self.cost(),
+            outputs=cost,
             updates=updates,
             givens={
-                self.theano_input: train_set[index * batch_size: (index + 1) * batch_size]
-            }
+                in_var : train_set[index * batch_size: (index + 1) * batch_size]
+            },
         )
         return train_fn
+
+class StackedDenoisingAutoencoder(object):
+    def __init__(
+        self,
+        theano_input,
+        theano_output,
+        no_ins,
+        no_outs,
+        layers,
+        weight_initializer,
+        noise_initializer,
+        corruption_levels
+    ):
+        self.theano_input = theano_input
+        self.theano_output = theano_output
+        self.no_layers = len(layers)
+        self.sigmoid_layers = []
+        self.da_layers = []
+        self.params = []
+
+        for layer in range(self.no_layers):
+            if layer == 0:
+                input_size = no_ins
+                layer_input = self.theano_input
+            else:
+                input_size = layers[layer - 1]
+                layer_input = self.sigmoid_layers[layer - 1].output
+            
+            sigmoid_layer = HiddenLayer(
+                weight_initializer,
+                layer_input,
+                input_size,
+                layers[layer],
+                activation=T.nnet.sigmoid
+            )
+            self.sigmoid_layers.append(sigmoid_layer)
+            self.params.extend(sigmoid_layer.params)
+
+            da_layer = DenoisingAutoencoder(
+                weight_initializer,
+                noise_initializer,
+                input_size,
+                layers[layer],
+                corruption_levels[layer],
+                layer_input,
+                weights=sigmoid_layer.weights,
+                bhid=sigmoid_layer.biases
+            )
+            self.da_layers.append(da_layer)
+
+        #self.log_layer = LogistRegression()
+        #self.params.extend(self.log_layer.params)
+                
+
+    def get_pretrain_fns(self, index, batch_size, learning_rate, train_set):
+        pretrain_fns = []
+        for dA in self.da_layers:
+            pretrain_fns.append(
+                dA.get_train_fn(index, batch_size, learning_rate, train_set, self.theano_input)
+            )
+        return pretrain_fns
+
+
+    def get_train_fn(self):
+        pass
