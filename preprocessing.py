@@ -20,7 +20,8 @@ testing_set = pd.read_csv("data/testing.csv")
 concat_set = pd.concat([training_set, testing_set])
 
 # Store classes
-classes = concat_set['behindn']
+classes = concat_set['rank']
+classes = [ c - 1 for c in classes]
 
 # It seems that those params are not necessary
 concat_set = concat_set.drop(

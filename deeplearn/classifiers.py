@@ -96,6 +96,8 @@ class HiddenLayer(object):
                 ),
                 dtype=theano.config.floatX
             )
+            if activation == T.nnet.sigmoid:
+                tmp = tmp * 4
             weights = theano.shared(value=tmp, borrow=True)
 
         if biases is None:
@@ -130,7 +132,7 @@ class DenoisingAutoencoder(object):
         self.noise_initializer = noise_initializer
 
         if weights is None:
-            weights = np.asarray(
+            weights =  np.asarray(
                 weights_initializer.uniform(
                     low=-4 * np.sqrt(6. / (no_visible + no_hidden)),
                     high=4 * np.sqrt(6. / (no_visible + no_hidden)),
@@ -252,8 +254,13 @@ class StackedDenoisingAutoencoder(object):
             )
             self.da_layers.append(da_layer)
 
-        #self.log_layer = LogistRegression()
-        #self.params.extend(self.log_layer.params)
+        self.log_layer = LogisticRegression(
+            self.sigmoid_layers[-1].output,
+            self.theano_output,
+            layers[-1],
+            no_outs
+        )
+        self.params.extend(self.log_layer.params)
                 
 
     def get_pretrain_fns(self, index, batch_size, learning_rate, train_set):
@@ -264,6 +271,45 @@ class StackedDenoisingAutoencoder(object):
             )
         return pretrain_fns
 
+    def get_train_fn(
+        self, index, batch_size, learning_rate, train_set_x, train_set_y
+    ):
+        train_cost = self.log_layer.cost()
+        grad_params = T.grad(train_cost, self.params)
+        updates = [
+            (param, param - gparam * learning_rate)
+            for param, gparam in zip(self.params, grad_params)
+        ]
+        return theano.function(
+            inputs=[index],
+            outputs=train_cost,
+            updates=updates,
+            givens = {
+                self.theano_input : train_set_x[
+                    index * batch_size: (index + 1) * batch_size
+                ],
+                self.theano_output : train_set_y[
+                    index * batch_size: (index + 1) * batch_size
+                ]
+            }
+        )
 
-    def get_train_fn(self):
-        pass
+    def get_valid_fn(self, index, batch_size, train_set_x, train_set_y):
+        return theano.function(
+            inputs=[index],
+            outputs=self.log_layer.errors(),
+            givens={
+                self.theano_input : train_set_x[
+                    index * batch_size : (index + 1) * batch_size
+                ],
+                self.theano_output : train_set_y[
+                    index * batch_size : (index + 1) * batch_size
+                ]
+            }
+        )
+    
+    def get_predict_fn(self):
+        return theano.function(
+            inputs=[self.theano_input],
+            outputs=self.log_layer.y_pred
+        )
