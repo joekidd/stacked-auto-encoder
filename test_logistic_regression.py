@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import print_function
+
 import deeplearn.datasets as dt
 from deeplearn.classifiers import LogisticRegression
 import deeplearn.metrics as mt
@@ -35,16 +37,18 @@ def main():
         cv_costs = []
         for batch_no in range(no_cv_batches):
             cv_costs.append(valid_fn(batch_no))
-        print "Epoch %d: train_cost=%f cv_cost=%f" % (epoch, np.mean(train_costs), np.mean(cv_costs))
+        print("Epoch %d: train_cost=%f cv_cost=%f"
+              % (epoch, np.mean(train_costs), np.mean(cv_costs))
+             )
 
     test_cost = []
     for batch_no in range(no_test_batches):
         test_cost.append(test_fn(batch_no))
-    print "Test set cost = %f" % (np.mean(test_cost))
+    print("Test set cost = %f" % (np.mean(test_cost)))
     given_y = classifier.get_predict_fn()(test_x.get_value())
     expected_y = test_y.eval()
-    print "\n=======> Confusion matrix:"
-    print mt.confusion_matrix(given_y, expected_y, list(set(expected_y)))
+    print("======= Confusion matrix =========")
+    print(mt.confusion_matrix(given_y, expected_y, list(set(expected_y))))
 
 if __name__ == "__main__":
     main()

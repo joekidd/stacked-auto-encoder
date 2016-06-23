@@ -1,16 +1,18 @@
 #!/usr/bin/env python
+import numpy as np
+
+import theano.tensor as T
+from theano.tensor.shared_randomstreams import RandomStreams
+
 import deeplearn.datasets as dt
 from deeplearn.classifiers import DenoisingAutoencoder
-import theano.tensor as T
-import numpy as np
-from theano.tensor.shared_randomstreams import RandomStreams
 
 def main():
     (
-        (train_x, train_y),
-        (valid_x, valid_y),
-        (test_x, test_y)
-    ) = dt.load_iris()
+        (train_x, _),
+        (_, _),
+        (_, _)
+    ) = dt.load_horse_racing()
 
     index = T.lscalar()
     x = T.matrix('x')
@@ -18,9 +20,9 @@ def main():
 
     weights_initializer = np.random.RandomState(123)
     dA = DenoisingAutoencoder(
-            weights_initializer,
-            RandomStreams(weights_initializer.randint(2 ** 30)),
-            4, 500, 0.3, x
+        weights_initializer,
+        RandomStreams(weights_initializer.randint(2 ** 30)),
+        4, 500, 0.3, x
     )
 
     epochs = 15
@@ -37,4 +39,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
