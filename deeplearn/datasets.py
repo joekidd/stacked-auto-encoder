@@ -1,9 +1,10 @@
 import theano
 import theano.tensor as T
+
 import numpy as np
+
 from sklearn import datasets
 from sklearn.utils import shuffle
-
 
 def make_shared(x, y):
     shared_x = theano.shared(

@@ -45,8 +45,9 @@ for label in text_features_labels:
     concat_set[label] = encoder.fit_transform(text_features[label])
 
 # Scale features
-scaled_features = preprocessing.scale(concat_set)
-scaled_labels = preprocessing.scale(classes)
+scaler = preprocessing.MinMaxScaler()
+scaled_features = scaler.fit_transform(concat_set)
+#scaled_labels = preprocessing.scale(classes)
 
 # Save preprocessed data
 x, y = training_set.shape

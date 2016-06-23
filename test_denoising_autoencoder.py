@@ -22,7 +22,7 @@ def main():
     dA = DenoisingAutoencoder(
         weights_initializer,
         RandomStreams(weights_initializer.randint(2 ** 30)),
-        4, 500, 0.3, x
+        20, 500, 0.3, x
     )
 
     epochs = 15
